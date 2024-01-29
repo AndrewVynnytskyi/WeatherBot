@@ -14,11 +14,13 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/org.telegram/telegrambots-abilities -->
         <dependency>
             <groupId>org.telegram</groupId>
-            <artifactId>telegrambots</artifactId>
+            <artifactId>telegrambots-abilities</artifactId>
             <version>6.9.7.0</version>
         </dependency>
+
         <!-- https://mvnrepository.com/artifact/com.squareup.retrofit2/retrofit -->
         <dependency>
             <groupId>com.squareup.retrofit2</groupId>

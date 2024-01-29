@@ -66,7 +66,7 @@ public class WeatherBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotToken() {
-        return ;
+        return;
     }
 
     private void requestGeo(String chatId, String respMsg) throws TelegramApiException {
