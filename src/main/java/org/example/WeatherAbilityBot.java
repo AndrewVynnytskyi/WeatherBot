@@ -20,6 +20,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static org.telegram.abilitybots.api.objects.Locality.USER;
@@ -54,6 +55,8 @@ public class WeatherAbilityBot extends AbilityBot {
 
              if (location != null)
              {
+                 Map<Long, Location> Geoposition = db.getMap("location");
+                 Geoposition.put(upd.getMessage().getChatId(),location);
                  silent.send("Your location set sucsesfully", getChatId(upd));
              }
         };
@@ -67,6 +70,7 @@ public class WeatherAbilityBot extends AbilityBot {
                .info("Start Weather bot")
                .locality(USER)
                .privacy(PUBLIC)
+               .setStatsEnabled(true)
                .action(ctx ->
                {
                    try {
@@ -80,6 +84,8 @@ public class WeatherAbilityBot extends AbilityBot {
                    }
 
 
+
+
                }).build();
     }
 
@@ -89,9 +95,12 @@ public class WeatherAbilityBot extends AbilityBot {
                 .info("Send a current weather")
                 .locality(USER)
                 .privacy(PUBLIC)
+                .setStatsEnabled(true)
                 .action(ctx ->
                         {
-                            weatherClient.getWeather(location.getLatitude(),location.getLongitude(),appid, "metric").enqueue(
+                            Map<Long, Location> currentL = db.getMap("location");
+                            Location loc = currentL.get(ctx.chatId());
+                            weatherClient.getWeather(loc.getLatitude(),loc.getLongitude(),appid, "metric").enqueue(
                                     new Callback<>() {
                                         @Override
                                         public void onResponse(Call<WeatherDto> call, Response<WeatherDto> response) {
@@ -126,6 +135,7 @@ public class WeatherAbilityBot extends AbilityBot {
         keyboardMarkup.setResizeKeyboard(true);
         SendMessage sendMessage = new SendMessage(Long.toString(chatId), message);
         sendMessage.setReplyMarkup(keyboardMarkup);
+
         execute(sendMessage);
     }
 
