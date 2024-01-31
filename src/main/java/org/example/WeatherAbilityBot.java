@@ -1,6 +1,8 @@
 package org.example;
 
 import org.example.dtos.WeatherDto;
+import org.example.dtos.WeatherForecastDto;
+import org.example.network.ForecastQuerries;
 import org.example.network.WeatherClient;
 import org.example.network.WeatherQueries;
 import org.telegram.abilitybots.api.bot.AbilityBot;
@@ -23,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import static org.telegram.abilitybots.api.objects.Locality.ALL;
 import static org.telegram.abilitybots.api.objects.Locality.USER;
 import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 import static org.telegram.abilitybots.api.util.AbilityUtils.getChatId;
@@ -30,7 +33,8 @@ import static org.telegram.abilitybots.api.util.AbilityUtils.getChatId;
 public class WeatherAbilityBot extends AbilityBot {
     private final String appid = ;
     private final WeatherClient Client = new WeatherClient();
-    private  WeatherQueries weatherClient = Client.getWeatherClient();
+    private final WeatherQueries weatherClient = Client.getWeatherClient();
+    private final ForecastQuerries forecastClient = Client.getForecastClient();
     private static Location location =new Location();
 
 
@@ -121,6 +125,56 @@ public class WeatherAbilityBot extends AbilityBot {
                         }
                 ).build();
     }
+    public Ability weatherForecast()
+    {
+        return Ability.builder()
+                .name("forecast")
+                .info("Forecast for five days with step of three hours")
+                .locality(USER)
+                .privacy(PUBLIC)
+                .action(ctx ->
+                        {
+                            Map<Long, Location> currentL = db.getMap("location");
+                            Location loc = currentL.get(ctx.chatId());
+                            forecastClient.getForecst(loc.getLatitude(), loc.getLongitude(), appid, "metric").enqueue(
+
+                                    new Callback<WeatherForecastDto>() {
+                                        @Override
+                                        public void onResponse(Call<WeatherForecastDto> call, Response<WeatherForecastDto> response) {
+                                            if(response.isSuccessful()) {
+                                                assert response.body() != null;
+                                                for (String element : response.body().toArray())
+                                                {
+                                                    silent.send(element, ctx.chatId());
+                                                }
+
+
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onFailure(Call<WeatherForecastDto> call, Throwable throwable) {
+                                            System.out.println("Error: " + throwable);
+                                            throwable.printStackTrace();
+                                        }
+                                    }
+                            );
+                        }
+
+                ).build();
+    }
+
+    public Ability help() {
+        return Ability.builder()
+                .name("help")
+                .info("Current commands")
+                .locality(USER)
+                .privacy(PUBLIC)
+                .action(ctx -> {
+                    silent.send("", ctx.chatId());
+                }).build();
+    }
+
     void requestGeo(long chatId, String message) throws TelegramApiException {
         KeyboardButton keyboardButton = new KeyboardButton();
 
