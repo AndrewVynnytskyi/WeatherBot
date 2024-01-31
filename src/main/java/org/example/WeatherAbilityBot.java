@@ -1,5 +1,8 @@
 package org.example;
 
+import org.example.dtos.WeatherDto;
+import org.example.network.WeatherClient;
+import org.example.network.WeatherQueries;
 import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.bot.BaseAbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
@@ -12,26 +15,31 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
-import static org.telegram.abilitybots.api.objects.Locality.ALL;
 import static org.telegram.abilitybots.api.objects.Locality.USER;
 import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 import static org.telegram.abilitybots.api.util.AbilityUtils.getChatId;
 
 public class WeatherAbilityBot extends AbilityBot {
-
+    private final String appid = ;
+    private final WeatherClient Client = new WeatherClient();
+    private  WeatherQueries weatherClient = Client.getWeatherClient();
     private static Location location =new Location();
+
+
     protected WeatherAbilityBot() {
-        super();
+        super( );
     }
 
     @Override
     public long creatorId() {
-        return 0;
+        return 933581261;
     }
 
 
@@ -43,6 +51,7 @@ public class WeatherAbilityBot extends AbilityBot {
         {
              location.setLatitude(upd.getMessage().getLocation().getLatitude());
              location.setLongitude(upd.getMessage().getLocation().getLongitude());
+
              if (location != null)
              {
                  silent.send("Your location set sucsesfully", getChatId(upd));
@@ -72,9 +81,36 @@ public class WeatherAbilityBot extends AbilityBot {
 
 
                }).build();
+    }
 
+    public Ability currentWeather()
+    {
+        return Ability.builder().name("current")
+                .info("Send a current weather")
+                .locality(USER)
+                .privacy(PUBLIC)
+                .action(ctx ->
+                        {
+                            weatherClient.getWeather(location.getLatitude(),location.getLongitude(),appid, "metric").enqueue(
+                                    new Callback<>() {
+                                        @Override
+                                        public void onResponse(Call<WeatherDto> call, Response<WeatherDto> response) {
+                                            if(response.isSuccessful())
+                                            {
+                                                assert response.body() != null;
+                                                silent.send(response.body().toString(), ctx.chatId());
+                                            }
+                                        }
 
-
+                                        @Override
+                                        public void onFailure(Call<WeatherDto> call, Throwable throwable) {
+                                            System.out.println("Error: " + throwable);
+                                            throwable.printStackTrace();
+                                        }
+                                    }
+                            );
+                        }
+                ).build();
     }
     void requestGeo(long chatId, String message) throws TelegramApiException {
         KeyboardButton keyboardButton = new KeyboardButton();
