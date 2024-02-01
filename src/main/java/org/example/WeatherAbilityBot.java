@@ -1,7 +1,9 @@
 package org.example;
 
 import org.example.dtos.WeatherDto;
+import org.example.dtos.WeatherForecast7Dto;
 import org.example.dtos.WeatherForecastDto;
+import org.example.network.Forecast7Querries;
 import org.example.network.ForecastQuerries;
 import org.example.network.WeatherClient;
 import org.example.network.WeatherQueries;
@@ -32,9 +34,12 @@ import static org.telegram.abilitybots.api.util.AbilityUtils.getChatId;
 
 public class WeatherAbilityBot extends AbilityBot {
     private final String appid = ;
+
+    private final String appid1 = ;
     private final WeatherClient Client = new WeatherClient();
     private final WeatherQueries weatherClient = Client.getWeatherClient();
     private final ForecastQuerries forecastClient = Client.getForecastClient();
+    private  final Forecast7Querries forecast7Client = Client.getForecast7Client();
     private static Location location =new Location();
 
 
@@ -44,7 +49,7 @@ public class WeatherAbilityBot extends AbilityBot {
 
     @Override
     public long creatorId() {
-        return 933581261;
+        return;
     }
 
 
@@ -128,10 +133,11 @@ public class WeatherAbilityBot extends AbilityBot {
     public Ability weatherForecast()
     {
         return Ability.builder()
-                .name("forecast")
+                .name("detailed_forecast")
                 .info("Forecast for five days with step of three hours")
                 .locality(USER)
                 .privacy(PUBLIC)
+                .enableStats()
                 .action(ctx ->
                         {
                             Map<Long, Location> currentL = db.getMap("location");
@@ -164,6 +170,45 @@ public class WeatherAbilityBot extends AbilityBot {
                 ).build();
     }
 
+    public Ability weatherForecast7()
+    {
+        return Ability.builder()
+                .name("forecast_for_7_days")
+                .info("Simplified forecast")
+                .locality(USER)
+                .privacy(PUBLIC)
+                .setStatsEnabled(true)
+                .action(ctx ->
+                        {
+                            Map<Long, Location> currentL = db.getMap("location");
+                            Location loc = currentL.get(ctx.chatId());
+                            forecast7Client.getForecast7(loc.getLatitude(), loc.getLongitude(),"daily","EET","metric",appid1 ).enqueue(
+
+                                    new Callback<WeatherForecast7Dto>() {
+                                        @Override
+                                        public void onResponse(Call<WeatherForecast7Dto> call, Response<WeatherForecast7Dto> response) {
+                                            if(response.isSuccessful() && response.body()!=null)
+                                            {
+
+                                                silent.send(response.body().toString(), ctx.chatId());
+
+                                            }
+
+
+
+                                        }
+
+                                        @Override
+                                        public void onFailure(Call<WeatherForecast7Dto> call, Throwable throwable) {
+                                            System.out.println("Error: " + throwable);
+                                            throwable.printStackTrace();
+                                        }
+                                    }
+                            );
+                        }
+
+                ).build();
+    }
     public Ability help() {
         return Ability.builder()
                 .name("help")
@@ -171,7 +216,13 @@ public class WeatherAbilityBot extends AbilityBot {
                 .locality(USER)
                 .privacy(PUBLIC)
                 .action(ctx -> {
-                    silent.send("", ctx.chatId());
+                    silent.send("""
+                            Current commands for now:
+                            /start
+                            /current
+                            /detailed_forecast
+                            /forecast_for_7_days
+                            /help""", ctx.chatId());
                 }).build();
     }
 
