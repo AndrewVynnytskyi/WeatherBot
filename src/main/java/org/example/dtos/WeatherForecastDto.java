@@ -2,20 +2,96 @@ package org.example.dtos;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+
+import static org.apache.commons.lang3.StringUtils.capitalize;
 
 public class WeatherForecastDto {
         private ArrayList<List> list;
         private City city;
+        private final Map<String, String> emojis =getWeatherEmoji();
+
+    private static Map<String, String> getWeatherEmoji() {
+        Map<String, String> weatherDescriptionToEmojiMap = new HashMap<>();
+
+
+        weatherDescriptionToEmojiMap.put("thunderstorm with light rain", "⛈️🌧️");
+        weatherDescriptionToEmojiMap.put("thunderstorm with rain", "⛈️🌧️");
+        weatherDescriptionToEmojiMap.put("thunderstorm with heavy rain", "⛈️🌧️💦");
+        weatherDescriptionToEmojiMap.put("light thunderstorm", "⛈️⚡");
+        weatherDescriptionToEmojiMap.put("thunderstorm", "⛈️⚡");
+        weatherDescriptionToEmojiMap.put("heavy thunderstorm", "⛈️⚡💦");
+        weatherDescriptionToEmojiMap.put("ragged thunderstorm", "⛈️⚡");
+        weatherDescriptionToEmojiMap.put("thunderstorm with light drizzle", "⛈️🌧️💧");
+        weatherDescriptionToEmojiMap.put("thunderstorm with drizzle", "⛈️🌧️💧");
+        weatherDescriptionToEmojiMap.put("thunderstorm with heavy drizzle", "⛈️🌧️💧💦");
+
+        weatherDescriptionToEmojiMap.put("light intensity drizzle", "🌧️💧");
+        weatherDescriptionToEmojiMap.put("drizzle", "🌧️💦");
+        weatherDescriptionToEmojiMap.put("heavy intensity drizzle", "🌧️💦💦");
+        weatherDescriptionToEmojiMap.put("light intensity drizzle rain", "🌧️💧");
+        weatherDescriptionToEmojiMap.put("drizzle rain", "🌧️💦");
+        weatherDescriptionToEmojiMap.put("heavy intensity drizzle rain", "🌧️💦💦");
+        weatherDescriptionToEmojiMap.put("shower rain and drizzle", "🌧️💦💧");
+        weatherDescriptionToEmojiMap.put("heavy shower rain and drizzle", "🌧️💦💦💧");
+        weatherDescriptionToEmojiMap.put("shower drizzle", "🌧️💦");
+
+        weatherDescriptionToEmojiMap.put("light rain", "🌧️💦");
+        weatherDescriptionToEmojiMap.put("moderate rain", "🌧️💦💦");
+        weatherDescriptionToEmojiMap.put("heavy intensity rain", "🌧️💦💦💦");
+        weatherDescriptionToEmojiMap.put("very heavy rain", "🌧️💦💦💦💦");
+        weatherDescriptionToEmojiMap.put("extreme rain", "🌧️💦💦💦💦💦");
+        weatherDescriptionToEmojiMap.put("freezing rain", "🌧️❄️💦");
+        weatherDescriptionToEmojiMap.put("light intensity shower rain", "🌧️💦💧");
+        weatherDescriptionToEmojiMap.put("shower rain", "🌧️💦💦💧");
+        weatherDescriptionToEmojiMap.put("heavy intensity shower rain", "🌧️💦💦💦💧");
+        weatherDescriptionToEmojiMap.put("ragged shower rain", "🌧️💦💧");
+
+        weatherDescriptionToEmojiMap.put("light snow", "❄️💧");
+        weatherDescriptionToEmojiMap.put("snow", "❄️💦");
+        weatherDescriptionToEmojiMap.put("heavy snow", "❄️💦💦");
+        weatherDescriptionToEmojiMap.put("sleet", "🌨️❄️💦");
+        weatherDescriptionToEmojiMap.put("light shower sleet", "🌨️❄️💦💧");
+        weatherDescriptionToEmojiMap.put("shower sleet", "🌨️❄️💦💦💧");
+        weatherDescriptionToEmojiMap.put("light rain and snow", "🌨️💦❄️");
+        weatherDescriptionToEmojiMap.put("rain and snow", "🌨️💦❄️💧");
+        weatherDescriptionToEmojiMap.put("light shower snow", "🌨️💦💧");
+        weatherDescriptionToEmojiMap.put("shower snow", "🌨️💦💧💦");
+        weatherDescriptionToEmojiMap.put("heavy shower snow", "🌨️💦💦💧💦");
+
+        weatherDescriptionToEmojiMap.put("mist", "🌫️");
+        weatherDescriptionToEmojiMap.put("smoke", "🌫️");
+        weatherDescriptionToEmojiMap.put("haze", "🌫️");
+        weatherDescriptionToEmojiMap.put("sand/dust whirls", "🌪️");
+        weatherDescriptionToEmojiMap.put("fog", "🌫️");
+        weatherDescriptionToEmojiMap.put("sand", "🌪️");
+        weatherDescriptionToEmojiMap.put("dust", "🌪️");
+        weatherDescriptionToEmojiMap.put("volcanic ash", "🌋");
+        weatherDescriptionToEmojiMap.put("squalls", "🌪️");
+        weatherDescriptionToEmojiMap.put("tornado", "🌪️");
+
+        weatherDescriptionToEmojiMap.put("clear sky", "☀️");
+        weatherDescriptionToEmojiMap.put("few clouds", "⛅");
+        weatherDescriptionToEmojiMap.put("scattered clouds", "🌥️");
+        weatherDescriptionToEmojiMap.put("broken clouds", "☁️");
+        weatherDescriptionToEmojiMap.put("overcast clouds", "☁️");
+
+
+        return weatherDescriptionToEmojiMap;
+    }
+
+
 
         private String getDirection(int deg) {
-            return (deg >= 337 || deg < 23) ? "North" :
-                    (deg >= 23 && deg < 68) ? "Northeast" :
-                            (deg >= 68 && deg < 113) ? "East" :
-                                    (deg >= 113 && deg < 158) ? "Southeast" :
-                                            (deg >= 158 && deg < 203) ? "South" :
-                                                    (deg >= 203 && deg < 248) ? "Southwest" :
-                                                            (deg >= 248 && deg < 293) ? "West" :
+            return deg >= 337 || deg < 23 ? "North" :
+                    deg < 68 ? "Northeast" :
+                            deg < 113 ? "East" :
+                                    deg < 158 ? "Southeast" :
+                                            deg < 203 ? "South" :
+                                                    deg < 248 ? "Southwest" :
+                                                            deg < 293 ? "West" :
                                                                     "Northwest";
         }
         private String getPartOfDay(String part)
@@ -55,32 +131,36 @@ public class WeatherForecastDto {
                 String buff;
                 if(data.equals(element.dt_txt.substring(0, 10)))
                 {
-                     buff = element.dt_txt.substring(11,16) + " " +
-                            element.weather.getFirst().description +
-                            " "+ element.main.temp + "°C "+
-                            "precipitation: "+ element.pop +" "+
-                            getDirection(element.wind.deg)+" "+
+                     buff = element.dt_txt.substring(11,16) + ": " +
+                            capitalize(element.weather.getFirst().description) +
+                             " " + emojis.get(element.weather.getFirst().description)+
+                            ", "+ element.main.temp + "°C, "+
+                            "Precipitation: "+ element.pop +"%, "+
+                            getDirection(element.wind.deg)+" wind at "+
                             element.wind.speed +"m/s\n";
                 }
                 else
                 {
-                    if(list.indexOf(element) != 0)
+                    if(!data.isEmpty())
                     {
                         forecastString = forecastString.concat("\nYour location: " + city.name +"\nDate of forecast: " + data);
                         forecast.add(forecastString);
                     }
                     data = element.dt_txt.substring(0, 10);
-                    buff = element.dt_txt.substring(11,16) + " " +
-                            element.weather.getFirst().description +
-                            " "+ element.main.temp + "°C "+
-                            "precipitation: "+ element.pop +" "+
-                            getDirection(element.wind.deg)+" "+
+                    buff = element.dt_txt.substring(11,16) + ": " +
+                            capitalize(element.weather.getFirst().description) +
+                            " " + emojis.get(element.weather.getFirst().description)+
+                            ", "+ element.main.temp + "°C, "+
+                            "Precipitation: "+ element.pop +"%, "+
+                            getDirection(element.wind.deg)+" wind at "+
                             element.wind.speed +"m/s\n";
                     forecastString = "";
                 }
                 forecastString = forecastString.concat(buff);
 
             }
+            forecastString = forecastString.concat("\nYour location: " + city.name +"\nDate of forecast: " + data);
+            forecast.add(forecastString);
             return forecast;
         }
 }
@@ -121,6 +201,7 @@ class Sys_F{
 
 class Weather_F{
     String main;
+
     String description;
 
 

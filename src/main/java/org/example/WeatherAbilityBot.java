@@ -290,6 +290,7 @@ public class WeatherAbilityBot extends AbilityBot {
                             /detailed_forecast
                             /forecast_for_7_days
                             /edit_geolocation
+                            /for_one_day
                             /help""", ctx.chatId());
                 }).build();
     }
@@ -306,6 +307,34 @@ public class WeatherAbilityBot extends AbilityBot {
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
+                }).build();
+    }
+
+    public Ability detailedForOneDay() {
+        return Ability.builder()
+                .name("for_one_day")
+                .info("Forecast for one dat")
+                .locality(USER)
+                .privacy(PUBLIC)
+                .action(ctx -> {
+                    Map<Long, Location> currentL = db.getMap("location");
+                    Location loc = currentL.get(ctx.chatId());
+                    forecast7Client.getForecast7(loc.getLatitude(), loc.getLongitude(), "hourly","EET", "metric",appid1).enqueue(
+                            new Callback<WeatherForecast7Dto>() {
+                                @Override
+                                public void onResponse(Call<WeatherForecast7Dto> call, Response<WeatherForecast7Dto> response) {
+                                    if(response.isSuccessful() && response.body()!=null) {
+                                        silent.send(response.body().toString(), ctx.chatId());
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Call<WeatherForecast7Dto> call, Throwable throwable) {
+                                    System.out.println("Error: " + throwable);
+                                    throwable.printStackTrace();
+                                }
+                            }
+                    );
                 }).build();
     }
 
