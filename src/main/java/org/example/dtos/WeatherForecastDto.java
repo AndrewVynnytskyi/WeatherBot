@@ -1,5 +1,6 @@
 package org.example.dtos;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -22,33 +23,64 @@ public class WeatherForecastDto {
             return((Objects.equals(part, "d"))?"day":"night");
         }
 
-
-        public ArrayList<String>  toArray()
+        public ArrayList<String> toDataArrayD()
         {
-            ArrayList<String> forecast = new ArrayList<>();
+        ArrayList<String> dataArr = new ArrayList<>();
 
+        String data = "";
+        for(List element: list )
+        {
 
-            for(List element: list )
+            if(!data.equals(element.dt_txt.substring(0, 10)))
             {
-                String buff = "_________________________________\n"+"Weather: " + element.weather.getFirst().main +
-                        "\nDescription of the weather: " + element.weather.getFirst().description +
-                        "\nThe temperature: "+ element.main.temp +
-                        "\nFeels like: " + element.main.feels_like +
-                        "\nHumidity: " + element.main.humidity +
-                        "\nPressure: " + element.main.pressure +
-                        "\nProbability of precipitation: "+ element.pop +
-                        "\nWind speed: " + element.wind.speed +
-                        "\nDirection: " + getDirection(element.wind.deg) +
-                        "\nPart of day: " + (getPartOfDay(element.sys.pod)) +
-                        "\nDate of Forecast: " + element.dt_txt +
-                        "\nYour location: " + city.name +
-                        "\n_________________________________\n";
-
-
-                forecast.add(buff);
+                var date = LocalDate.parse(element.dt_txt.substring(0, 10));
+                String dayOfWeek = date.getDayOfWeek().toString();
+                dayOfWeek = dayOfWeek.charAt(0) + dayOfWeek.substring(1, 3).toLowerCase();
+                dataArr.add(date.getDayOfMonth() + " " + dayOfWeek) ;
+                data = element.dt_txt.substring(0, 10);
             }
 
 
+        }
+
+        return dataArr;
+        }
+        public ArrayList<String>  toArrayD()
+        {
+            ArrayList<String> forecast = new ArrayList<>();
+            String forecastString = "";
+            String data = "";
+            for(List element: list )
+            {
+                String buff;
+                if(data.equals(element.dt_txt.substring(0, 10)))
+                {
+                     buff = element.dt_txt.substring(11,16) + " " +
+                            element.weather.getFirst().description +
+                            " "+ element.main.temp + "°C "+
+                            "precipitation: "+ element.pop +" "+
+                            getDirection(element.wind.deg)+" "+
+                            element.wind.speed +"m/s\n";
+                }
+                else
+                {
+                    if(list.indexOf(element) != 0)
+                    {
+                        forecastString = forecastString.concat("\nYour location: " + city.name +"\nDate of forecast: " + data);
+                        forecast.add(forecastString);
+                    }
+                    data = element.dt_txt.substring(0, 10);
+                    buff = element.dt_txt.substring(11,16) + " " +
+                            element.weather.getFirst().description +
+                            " "+ element.main.temp + "°C "+
+                            "precipitation: "+ element.pop +" "+
+                            getDirection(element.wind.deg)+" "+
+                            element.wind.speed +"m/s\n";
+                    forecastString = "";
+                }
+                forecastString = forecastString.concat(buff);
+
+            }
             return forecast;
         }
 }

@@ -90,34 +90,13 @@ public class WeatherAbilityBot extends AbilityBot {
             String answer = "";
             switch (call_data)
             {
-                case "0" ->
-                {
-                    answer = currentWeather.getFirst();
-                }
-                case "1" ->
-                {
-                    answer = currentWeather.get(1);
-                }
-                case "2" ->
-                {
-                    answer = currentWeather.get(2);
-                }
-                case "3" ->
-                {
-                    answer = currentWeather.get(3);
-                }
-                case "4" ->
-                {
-                    answer = currentWeather.get(4);
-                }
-                case "5" ->
-                {
-                    answer = currentWeather.get(5);
-                }
-                case "6" ->
-                {
-                    answer = currentWeather.get(6);
-                }
+                case "0" -> answer = currentWeather.getFirst();
+                case "1" -> answer = currentWeather.get(1);
+                case "2" -> answer = currentWeather.get(2);
+                case "3" -> answer = currentWeather.get(3);
+                case "4" -> answer = currentWeather.get(4);
+                case "5" -> answer = currentWeather.get(5);
+                case "6" -> answer = currentWeather.get(6);
 
             }
             EditMessageText new_message = new EditMessageText();
@@ -213,10 +192,22 @@ public class WeatherAbilityBot extends AbilityBot {
                                         @Override
                                         public void onResponse(Call<WeatherForecastDto> call, Response<WeatherForecastDto> response) {
                                             if(response.isSuccessful()) {
-                                                assert response.body() != null;
-                                                for (String element : response.body().toArray())
-                                                {
-                                                    silent.send(element, ctx.chatId());
+                                                if(response.isSuccessful() && response.body()!=null) {
+
+                                                    int index = 0;
+                                                    ArrayList<String> message = response.body().toArrayD();
+                                                    Map<Long, ArrayList<String>> currentW7 = db.getMap("weather7");
+                                                    currentW7.put(ctx.chatId(), response.body().toArrayD());
+                                                    Map<Long, ArrayList<String>> currentUserDate = db.getMap("Date");
+                                                    currentUserDate.put(ctx.chatId(), response.body().toDataArrayD());
+                                                    SendMessage sendMessage = new SendMessage(Long.toString(ctx.chatId()), message.getFirst());
+                                                    sendMessage.setReplyMarkup(createInlineKeyboard(response.body().toDataArrayD()));
+                                                    try {
+                                                        execute(sendMessage);
+                                                    } catch (TelegramApiException e) {
+                                                        throw new RuntimeException(e);
+                                                    }
+
                                                 }
 
 
@@ -271,7 +262,7 @@ public class WeatherAbilityBot extends AbilityBot {
                                                     throw new RuntimeException(e);
                                                 }
 
-                                        }
+                                            }
                                         }
 
                                         @Override
@@ -298,9 +289,26 @@ public class WeatherAbilityBot extends AbilityBot {
                             /current
                             /detailed_forecast
                             /forecast_for_7_days
+                            /edit_geolocation
                             /help""", ctx.chatId());
                 }).build();
     }
+
+    public Ability editGeolocation() {
+        return Ability.builder()
+                .name("edit_geolocation")
+                .info("Edit your geolocation")
+                .locality(USER)
+                .privacy(PUBLIC)
+                .action(ctx -> {
+                    try {
+                        requestGeo(ctx.chatId(), "If you want to update your geolocation, please press this button");
+                    } catch (TelegramApiException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).build();
+    }
+
 
     void requestGeo(long chatId, String message) throws TelegramApiException {
         KeyboardButton keyboardButton = new KeyboardButton();
@@ -319,8 +327,6 @@ public class WeatherAbilityBot extends AbilityBot {
 
         execute(sendMessage);
     }
-
-
 
     private InlineKeyboardMarkup createInlineKeyboard(ArrayList<String> message) {
 
