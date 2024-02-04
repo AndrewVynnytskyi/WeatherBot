@@ -1,12 +1,10 @@
 package org.example;
 
+import org.example.dtos.GeocodeDto;
 import org.example.dtos.WeatherDto;
 import org.example.dtos.WeatherForecast7Dto;
 import org.example.dtos.WeatherForecastDto;
-import org.example.network.Forecast7Querries;
-import org.example.network.ForecastQuerries;
-import org.example.network.WeatherClient;
-import org.example.network.WeatherQueries;
+import org.example.network.*;
 import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.bot.BaseAbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
@@ -27,12 +25,13 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
-import static org.telegram.abilitybots.api.objects.Locality.ALL;
 import static org.telegram.abilitybots.api.objects.Locality.USER;
 import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 import static org.telegram.abilitybots.api.util.AbilityUtils.getChatId;
@@ -41,10 +40,13 @@ public class WeatherAbilityBot extends AbilityBot {
     private final String appid = ;
 
     private final String appid1 = ;
+
+    private final String appid2 = ;
     private final WeatherClient Client = new WeatherClient();
     private final WeatherQueries weatherClient = Client.getWeatherClient();
     private final ForecastQuerries forecastClient = Client.getForecastClient();
     private  final Forecast7Querries forecast7Client = Client.getForecast7Client();
+    private  final GeoQuerries GeoClient = Client.getCityCoord();
     private static Location location =new Location();
 
 
@@ -88,6 +90,7 @@ public class WeatherAbilityBot extends AbilityBot {
             Map<Long, ArrayList<String>> currentDate7 = db.getMap("Date");
             ArrayList<String> currentDate = currentDate7.get(chat_id);
             String answer = "";
+            boolean loc = false;
             switch (call_data)
             {
                 case "0" -> answer = currentWeather.getFirst();
@@ -97,19 +100,31 @@ public class WeatherAbilityBot extends AbilityBot {
                 case "4" -> answer = currentWeather.get(4);
                 case "5" -> answer = currentWeather.get(5);
                 case "6" -> answer = currentWeather.get(6);
+                default ->
+                {
+                    loc = true;
+                    Map<Long, Location> currentL = db.getMap("location");
+                    Location location = new Location();
+                    location.setLatitude(Double.valueOf(call_data.substring(call_data.indexOf(" ") + 1)));
+                    location.setLongitude(Double.valueOf(call_data.substring(0 ,call_data.indexOf(" "))));
+                    currentL.put(chat_id,location);
+                    silent.send( "Your location is set successfully at this coordinates: " + call_data, upd.getCallbackQuery().getMessage().getChatId());
+                }
 
             }
-            EditMessageText new_message = new EditMessageText();
-            new_message.setChatId(Long.toString(chat_id));
-            new_message.setText(answer);
-            new_message.setMessageId(message.getMessageId());
-            new_message.setReplyMarkup(createInlineKeyboard(currentDate));
-            try {
-                execute(new_message);
-            } catch (TelegramApiException e) {
-                throw new RuntimeException(e);
+            if(!loc)
+            {
+                EditMessageText new_message = new EditMessageText();
+                new_message.setChatId(Long.toString(chat_id));
+                new_message.setText(answer);
+                new_message.setMessageId(message.getMessageId());
+                new_message.setReplyMarkup(createInlineKeyboard(currentDate));
+                try {
+                    execute(new_message);
+                } catch (TelegramApiException e) {
+                    throw new RuntimeException(e);
+                }
             }
-
         };
 
 
@@ -225,9 +240,71 @@ public class WeatherAbilityBot extends AbilityBot {
 
                 ).build();
     }
+    public Ability getCityByName()
+    {
+        String Message1 = "Choose your location from the list below:\n(If you don't see your location below, try to reply on the message before with the nearest village or city. Sorry!)";
+        String Message = "Send your city name to set your geolocation (slide this message to left and write the name of your location)";
+        return Ability.builder()
+                .name("set_geo_by_city")
+                .info("Set geolocation by city name")
+                .enableStats()
+                .locality(USER)
+                .privacy(PUBLIC)
+                .action(ctx ->
+                        {
+                            silent.send(Message, ctx.chatId());
+                        }
+                        )
+                .reply((baseAbilityBot, update) ->
+                        {
+                            GeoClient.getGeo(update.getMessage().getText() , false, false, 20 , appid2).enqueue(
 
+                                    new Callback<GeocodeDto>() {
+                                        @Override
+                                        public void onResponse(Call<GeocodeDto> call, Response<GeocodeDto> response) {
 
+                                            if(response.body() == null)
+                                            {
+                                                silent.send("Error, we can't find this city " + update.getMessage().getText(), update.getMessage().getChatId());
+                                            }
+                                            else {
+                                                SendMessage sendMessage = new SendMessage(Long.toString(update.getMessage().getChatId()),Message1);
+                                                sendMessage.setReplyMarkup(createInlineKeyboardLong(response.body().toArray()));
+                                                try {
+                                                    execute(sendMessage);
+                                                } catch (TelegramApiException e) {
+                                                    throw new RuntimeException(e);
+                                                }
+                                            }
+                                        }
 
+                                        @Override
+                                        public void onFailure(Call<GeocodeDto> call, Throwable throwable) {
+
+                                            System.out.println("Error: " + throwable);
+                                            throwable.printStackTrace();
+
+                                        }
+                                    }
+                            );
+                        },
+                        Flag.TEXT,
+                        Flag.REPLY,
+                        isReplyToMessage(Message),
+                        isReplyToBot()
+                )
+                .build();
+    }
+    private Predicate<Update> isReplyToMessage(String message) {
+        return upd -> {
+            Message reply = upd.getMessage().getReplyToMessage();
+            return reply.hasText() && reply.getText().equalsIgnoreCase(message);
+        };
+    }
+
+    private Predicate<Update> isReplyToBot() {
+        return upd -> upd.getMessage().getReplyToMessage().getFrom().getUserName().equalsIgnoreCase(getBotUsername());
+    }
     public Ability weatherForecast7()
     {
         return Ability.builder()
@@ -291,6 +368,7 @@ public class WeatherAbilityBot extends AbilityBot {
                             /forecast_for_7_days
                             /edit_geolocation
                             /for_one_day
+                            /set_geo_by_city
                             /help""", ctx.chatId());
                 }).build();
     }
@@ -346,7 +424,7 @@ public class WeatherAbilityBot extends AbilityBot {
         keyboardButton.setRequestLocation(true);
         KeyboardRow keyboardRow = new KeyboardRow();
         keyboardRow.add(keyboardButton);
-        ArrayList<KeyboardRow> keyboardRows = new ArrayList<KeyboardRow>();
+        ArrayList<KeyboardRow> keyboardRows = new ArrayList<>();
         keyboardRows.add(keyboardRow);
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
         keyboardMarkup.setKeyboard(keyboardRows);
@@ -379,6 +457,23 @@ public class WeatherAbilityBot extends AbilityBot {
         }
         keyboardRows.add(keyboardButtons);
         keyboardRows.add(keyboardButtons1);
+        inlineKeyboardMarkup.setKeyboard(keyboardRows);
+        return inlineKeyboardMarkup;
+    }
+
+    private InlineKeyboardMarkup createInlineKeyboardLong(ArrayList<ArrayList<String>> message) {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
+        for(ArrayList<String> element : message)
+        {
+            List<InlineKeyboardButton> keyboardButtons = new ArrayList<>();
+            InlineKeyboardButton keyboardButton = new InlineKeyboardButton();
+            keyboardButton.setText(element.getFirst());
+            keyboardButton.setCallbackData(element.getLast());
+            keyboardButtons.add(keyboardButton);
+            keyboardRows.add(keyboardButtons);
+
+        }
         inlineKeyboardMarkup.setKeyboard(keyboardRows);
         return inlineKeyboardMarkup;
     }
