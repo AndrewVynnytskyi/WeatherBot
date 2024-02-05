@@ -1,5 +1,6 @@
 package org.example;
 
+import org.example.configuration.Configuration;
 import org.example.dtos.GeocodeDto;
 import org.example.dtos.WeatherDto;
 import org.example.dtos.WeatherForecast7Dto;
@@ -37,11 +38,12 @@ import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 import static org.telegram.abilitybots.api.util.AbilityUtils.getChatId;
 
 public class WeatherAbilityBot extends AbilityBot {
-    private final String appid = ;
 
-    private final String appid1 = ;
+    private final String appid = Configuration.getAppID("BOT_API1");
 
-    private final String appid2 = ;
+    private final String appid1 = Configuration.getAppID("BOT_API2");
+
+    private final String appid2 = Configuration.getAppID("BOT_API3");
     private final WeatherClient Client = new WeatherClient();
     private final WeatherQueries weatherClient = Client.getWeatherClient();
     private final ForecastQuerries forecastClient = Client.getForecastClient();
@@ -51,12 +53,12 @@ public class WeatherAbilityBot extends AbilityBot {
 
 
     protected WeatherAbilityBot() {
-        super( );
+        super(Configuration.getKey() ,Configuration.getName() );
     }
 
     @Override
     public long creatorId() {
-        return ;
+        return Long.parseLong(Configuration.getID());
     }
 
 
@@ -243,7 +245,7 @@ public class WeatherAbilityBot extends AbilityBot {
     public Ability getCityByName()
     {
         String Message1 = "Choose your location from the list below:\n(If you don't see your location below, try to reply on the message before with the nearest village or city. Sorry!)";
-        String Message = "Send your city name to set your geolocation (slide this message to left and write the name of your location)";
+        String Message = "Send your city name to set your geolocation (slide this message to left on phone or click right button and choose \"Reply\" on PC or laptop and write the name of your location )";
         return Ability.builder()
                 .name("set_geo_by_city")
                 .info("Set geolocation by city name")
