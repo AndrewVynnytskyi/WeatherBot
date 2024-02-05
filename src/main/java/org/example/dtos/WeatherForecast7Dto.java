@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import static org.apache.commons.lang3.StringUtils.capitalize;
 
 public class WeatherForecast7Dto {
@@ -15,18 +17,14 @@ public class WeatherForecast7Dto {
     @Override
     public String toString()
     {
-        String forecast = "";
-        for(DatumD element : hourly.data)
-        {
-            String buff = element.date.substring(11, 16) + ": " +
-                    capitalize(element.summary) +" " + emojis.get(element.icon) +
-                    ", "+ element.temperature + "°C, "+
-                    (element.precipitation.type.equals("none")? "No precipitation": capitalize(element.precipitation.type)) +", "+
-                    element.wind.dir+" wind at "+
-                    element.wind.speed +"m/s\n";
-            forecast = forecast.concat(buff);
-        }
-        return forecast;
+        return hourly.data.stream().map(element ->
+        element.date.substring(11, 16) + ": " +
+                    capitalize(element.summary) + " " + emojis.get(element.icon) +
+                    ", " + element.temperature + "°C, " +
+                    (element.precipitation.type.equals("none") ? "No precipitation" : capitalize(element.precipitation.type)) + ", " +
+                    element.wind.dir + " wind at " +
+                    element.wind.speed + "m/s"
+        ).collect(Collectors.joining("\n"));
     }
 
     private static  Map<Integer, String>  getWeatherEmoji() {
@@ -102,41 +100,27 @@ public class WeatherForecast7Dto {
 
     public ArrayList<String> toDataArray()
     {
-        ArrayList<String> dataArr = new ArrayList<>();
-
-
-        for(Datum element: daily.data )
+        return daily.data.stream().map(element->
         {
             var date = LocalDate.parse(element.day);
             String dayOfWeek = date.getDayOfWeek().toString();
             dayOfWeek = dayOfWeek.charAt(0) + dayOfWeek.substring(1, 3).toLowerCase();
-            dataArr.add(date.getDayOfMonth() + " " + dayOfWeek) ;
-        }
-
-        return dataArr;
+            return date.getDayOfMonth() + " " + dayOfWeek;
+        }).collect(Collectors.toCollection(ArrayList<String>::new));
     }
 
 
     public ArrayList<String> toArray()
     {
-        ArrayList<String> forecastArr = new ArrayList<>();
-
-
-        for(Datum element: daily.data )
-        {
-            String buff = "_________________________________\n"+
-                    "Weather: " + element.summary +" " + emojis.get(element.icon) +
-                    "\nTemperature: "+ element.all_day.temperature + "°C, Max: " +
-                     element.all_day.temperature_max + "°C, Min: "+ element.all_day.temperature_min + "°C\n"+
-                    "Precipitation: "+ element.all_day.precipitation.total +" mm, " + capitalize(element.all_day.precipitation.type)+
-                    "\nWind: " + element.all_day.wind.speed +"m/s from " + element.all_day.wind.dir +
-                    "\nDate of Forecast: " + element.day +
-                    "\n_________________________________\n";
-
-
-            forecastArr.add(buff);
-        }
-        return forecastArr;
+        return daily.data.stream().map(element ->
+                "_________________________________\n"+
+                        "Weather: " + element.summary +" " + emojis.get(element.icon) +
+                        "\nTemperature: "+ element.all_day.temperature + "°C, Max: " +
+                        element.all_day.temperature_max + "°C, Min: "+ element.all_day.temperature_min + "°C\n"+
+                        "Precipitation: "+ element.all_day.precipitation.total +" mm, " + capitalize(element.all_day.precipitation.type)+
+                        "\nWind: " + element.all_day.wind.speed +"m/s from " + element.all_day.wind.dir +
+                        "\nDate of Forecast: " + element.day +
+                        "\n_________________________________\n").collect(Collectors.toCollection(ArrayList::new));
     }
 }
 

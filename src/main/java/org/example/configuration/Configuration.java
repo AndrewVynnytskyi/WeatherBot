@@ -17,28 +17,8 @@ public class Configuration {
     }
 
 
-    public static String getName()
-    {
-        String name = System.getenv("BOT_NAME");
-        if(name!=null){return name;}
-        name = properties.getProperty("BOT_NAME");
-        return name;
-    }
-    public static String getKey()
-    {
-        String key = System.getenv("BOT_KEY");
-        if(key!=null){return key;}
-        key = properties.getProperty("BOT_KEY");
-        return key;
-    }
-    public static String getID()
-    {
-        String key = System.getenv("CREATOR_ID");
-        if(key!=null){return key;}
-        key = properties.getProperty("CREATOR_ID");
-        return key;
-    }
-    public static String getAppID(String key)
+
+    public static String getConfig(String key)
     {
         String name = System.getenv(key);
         if(name!=null){return name;}

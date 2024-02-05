@@ -1,22 +1,22 @@
 package org.example.dtos;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class GeocodeDto {
 
     private ArrayList<Feature> features;
 
-    public ArrayList<ArrayList<String>> toArray()
+    public ArrayList<ArrayList<String>> toArray2()
     {
-        ArrayList<ArrayList<String>> locations = new ArrayList<>();
-        for (Feature element : features)
-        {
-            ArrayList<String> loc = new ArrayList<>();
-            loc.add(element.place_name);
-            loc.add(element.geometry.coordinates.getFirst() + " " + element.geometry.coordinates.getLast());
-            locations.add(loc);
-        }
-        return locations;
+        return (ArrayList<ArrayList<String>>) features.stream().map(s ->
+                {
+                    ArrayList<String> buff = new ArrayList<>();
+                    buff.add(s.place_name);
+                    buff.add(s.geometry.coordinates.getFirst() + " " + s.geometry.coordinates.getLast());
+                    return new ArrayList<>(buff);
+                }
+        ).collect(Collectors.toList());
     }
 }
 class Feature{

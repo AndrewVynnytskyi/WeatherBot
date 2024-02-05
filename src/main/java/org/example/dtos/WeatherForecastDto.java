@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.capitalize;
 
@@ -121,47 +123,22 @@ public class WeatherForecastDto {
 
         return dataArr;
         }
-        public ArrayList<String>  toArrayD()
+        public java.util.List<String>  toArrayD()
         {
-            ArrayList<String> forecast = new ArrayList<>();
-            String forecastString = "";
-            String data = "";
-            for(List element: list )
+            return list.stream().map(elementH ->
             {
-                String buff;
-                if(data.equals(element.dt_txt.substring(0, 10)))
-                {
-                     buff = element.dt_txt.substring(11,16) + ": " +
-                            capitalize(element.weather.getFirst().description) +
-                             " " + emojis.get(element.weather.getFirst().description)+
-                            ", "+ element.main.temp + "°C, "+
-                            "Precipitation: "+ element.pop +"%, "+
-                            getDirection(element.wind.deg)+" wind at "+
-                            element.wind.speed +"m/s\n";
-                }
-                else
-                {
-                    if(!data.isEmpty())
-                    {
-                        forecastString = forecastString.concat("\nYour location: " + city.name +"\nDate of forecast: " + data);
-                        forecast.add(forecastString);
-                    }
-                    data = element.dt_txt.substring(0, 10);
-                    buff = element.dt_txt.substring(11,16) + ": " +
-                            capitalize(element.weather.getFirst().description) +
-                            " " + emojis.get(element.weather.getFirst().description)+
-                            ", "+ element.main.temp + "°C, "+
-                            "Precipitation: "+ element.pop +"%, "+
-                            getDirection(element.wind.deg)+" wind at "+
-                            element.wind.speed +"m/s\n";
-                    forecastString = "";
-                }
-                forecastString = forecastString.concat(buff);
-
-            }
-            forecastString = forecastString.concat("\nYour location: " + city.name +"\nDate of forecast: " + data);
-            forecast.add(forecastString);
-            return forecast;
+                String stringStream = list.stream()
+                        .filter(element -> (elementH.dt_txt.substring(0,10)
+                                .equals(element.dt_txt.substring(0, 10))))
+                        .map(element-> element.dt_txt.substring(11,16) + ": " +
+                        capitalize(element.weather.getFirst().description) +
+                        " " + emojis.get(element.weather.getFirst().description)+
+                        ", "+ element.main.temp + "°C, "+
+                        "Precipitation: "+ element.pop +"%, "+
+                        getDirection(element.wind.deg)+" wind at "+
+                        element.wind.speed +"m/s\n").distinct().collect(Collectors.joining());
+               return stringStream.concat("\nYour location: " + city.name +"\nDate of forecast: " + elementH.dt_txt.substring(0,10));
+            }).distinct().toList();
         }
 }
 class City{

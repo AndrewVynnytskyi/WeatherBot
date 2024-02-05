@@ -26,7 +26,6 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,11 +38,11 @@ import static org.telegram.abilitybots.api.util.AbilityUtils.getChatId;
 
 public class WeatherAbilityBot extends AbilityBot {
 
-    private final String appid = Configuration.getAppID("BOT_API1");
+    private final String appid = Configuration.getConfig("BOT_API1");
 
-    private final String appid1 = Configuration.getAppID("BOT_API2");
+    private final String appid1 = Configuration.getConfig("BOT_API2");
 
-    private final String appid2 = Configuration.getAppID("BOT_API3");
+    private final String appid2 = Configuration.getConfig("BOT_API3");
     private final WeatherClient Client = new WeatherClient();
     private final WeatherQueries weatherClient = Client.getWeatherClient();
     private final ForecastQuerries forecastClient = Client.getForecastClient();
@@ -53,12 +52,12 @@ public class WeatherAbilityBot extends AbilityBot {
 
 
     protected WeatherAbilityBot() {
-        super(Configuration.getKey() ,Configuration.getName() );
+        super(Configuration.getConfig("BOT_KEY") ,Configuration.getConfig("BOT_NAME") );
     }
 
     @Override
     public long creatorId() {
-        return Long.parseLong(Configuration.getID());
+        return Long.parseLong(Configuration.getConfig("CREATOR_ID"));
     }
 
 
@@ -87,10 +86,10 @@ public class WeatherAbilityBot extends AbilityBot {
             String call_data = upd.getCallbackQuery().getData();
             var message = (Message) upd.getCallbackQuery().getMessage();
             long chat_id = upd.getCallbackQuery().getMessage().getChatId();
-            Map<Long, ArrayList<String>> currentW7 = db.getMap("weather7");
-            ArrayList<String> currentWeather = currentW7.get(chat_id);
-            Map<Long, ArrayList<String>> currentDate7 = db.getMap("Date");
-            ArrayList<String> currentDate = currentDate7.get(chat_id);
+            Map<Long, List<String>> currentW7 = db.getMap("weather7");
+            List<String> currentWeather = currentW7.get(chat_id);
+            Map<Long, List<String>> currentDate7 = db.getMap("Date");
+            List<String> currentDate = currentDate7.get(chat_id);
             String answer = "";
             boolean loc = false;
             switch (call_data)
@@ -208,14 +207,13 @@ public class WeatherAbilityBot extends AbilityBot {
                                     new Callback<WeatherForecastDto>() {
                                         @Override
                                         public void onResponse(Call<WeatherForecastDto> call, Response<WeatherForecastDto> response) {
-                                            if(response.isSuccessful()) {
-                                                if(response.isSuccessful() && response.body()!=null) {
+                                            if(response.isSuccessful()  && response.body()!=null) {
 
                                                     int index = 0;
-                                                    ArrayList<String> message = response.body().toArrayD();
-                                                    Map<Long, ArrayList<String>> currentW7 = db.getMap("weather7");
+                                                    List<String> message = response.body().toArrayD();
+                                                    Map<Long, List<String>> currentW7 = db.getMap("weather7");
                                                     currentW7.put(ctx.chatId(), response.body().toArrayD());
-                                                    Map<Long, ArrayList<String>> currentUserDate = db.getMap("Date");
+                                                    Map<Long, List<String>> currentUserDate = db.getMap("Date");
                                                     currentUserDate.put(ctx.chatId(), response.body().toDataArrayD());
                                                     SendMessage sendMessage = new SendMessage(Long.toString(ctx.chatId()), message.getFirst());
                                                     sendMessage.setReplyMarkup(createInlineKeyboard(response.body().toDataArrayD()));
@@ -224,10 +222,6 @@ public class WeatherAbilityBot extends AbilityBot {
                                                     } catch (TelegramApiException e) {
                                                         throw new RuntimeException(e);
                                                     }
-
-                                                }
-
-
                                             }
                                         }
 
@@ -271,7 +265,7 @@ public class WeatherAbilityBot extends AbilityBot {
                                             }
                                             else {
                                                 SendMessage sendMessage = new SendMessage(Long.toString(update.getMessage().getChatId()),Message1);
-                                                sendMessage.setReplyMarkup(createInlineKeyboardLong(response.body().toArray()));
+                                                sendMessage.setReplyMarkup(createInlineKeyboardLong(response.body().toArray2()));
                                                 try {
                                                     execute(sendMessage);
                                                 } catch (TelegramApiException e) {
@@ -329,9 +323,9 @@ public class WeatherAbilityBot extends AbilityBot {
 
                                                 int index = 0;
                                                 ArrayList<String> message = response.body().toArray();
-                                                Map<Long, ArrayList<String>> currentW7 = db.getMap("weather7");
+                                                Map<Long, List<String>> currentW7 = db.getMap("weather7");
                                                 currentW7.put(ctx.chatId(), response.body().toArray());
-                                                Map<Long, ArrayList<String>> currentUserDate = db.getMap("Date");
+                                                Map<Long, List<String>> currentUserDate = db.getMap("Date");
                                                 currentUserDate.put(ctx.chatId(), response.body().toDataArray());
                                                 SendMessage sendMessage = new SendMessage(Long.toString(ctx.chatId()), message.getFirst());
                                                 sendMessage.setReplyMarkup(createInlineKeyboard(response.body().toDataArray()));
@@ -437,7 +431,7 @@ public class WeatherAbilityBot extends AbilityBot {
         execute(sendMessage);
     }
 
-    private InlineKeyboardMarkup createInlineKeyboard(ArrayList<String> message) {
+    private InlineKeyboardMarkup createInlineKeyboard(List<String> message) {
 
 
         List<InlineKeyboardButton> keyboardButtons = new ArrayList<>();
@@ -462,6 +456,7 @@ public class WeatherAbilityBot extends AbilityBot {
         inlineKeyboardMarkup.setKeyboard(keyboardRows);
         return inlineKeyboardMarkup;
     }
+
 
     private InlineKeyboardMarkup createInlineKeyboardLong(ArrayList<ArrayList<String>> message) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
