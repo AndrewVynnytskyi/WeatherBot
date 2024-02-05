@@ -46,13 +46,13 @@ public class WeatherAbilityBot extends AbilityBot {
     private final WeatherClient Client = new WeatherClient();
     private final WeatherQueries weatherClient = Client.getWeatherClient();
     private final ForecastQuerries forecastClient = Client.getForecastClient();
-    private  final Forecast7Querries forecast7Client = Client.getForecast7Client();
-    private  final GeoQuerries GeoClient = Client.getCityCoord();
-    private static Location location =new Location();
+    private final Forecast7Querries forecast7Client = Client.getForecast7Client();
+    private final GeoQuerries GeoClient = Client.getCityCoord();
+    private static Location location = new Location();
 
 
     protected WeatherAbilityBot() {
-        super(Configuration.getConfig("BOT_KEY") ,Configuration.getConfig("BOT_NAME") );
+        super(Configuration.getConfig("BOT_KEY"), Configuration.getConfig("BOT_NAME"));
     }
 
     @Override
@@ -61,27 +61,23 @@ public class WeatherAbilityBot extends AbilityBot {
     }
 
 
-
-
-    public Reply GetGeo()
-    {
-        BiConsumer<BaseAbilityBot, Update> action = (bot, upd)  ->
+    public Reply GetGeo() {
+        BiConsumer<BaseAbilityBot, Update> action = (bot, upd) ->
         {
-             location.setLatitude(upd.getMessage().getLocation().getLatitude());
-             location.setLongitude(upd.getMessage().getLocation().getLongitude());
+            location.setLatitude(upd.getMessage().getLocation().getLatitude());
+            location.setLongitude(upd.getMessage().getLocation().getLongitude());
 
-             if (location != null)
-             {
-                 Map<Long, Location> Geoposition = db.getMap("location");
-                 Geoposition.put(upd.getMessage().getChatId(),location);
-                 silent.send("Your location set successfully", getChatId(upd));
-             }
+            if (location != null) {
+                Map<Long, Location> Geoposition = db.getMap("location");
+                Geoposition.put(upd.getMessage().getChatId(), location);
+                silent.send("Your location set successfully", getChatId(upd));
+            }
         };
         return Reply.of(action, Flag.LOCATION);
     }
 
     public Reply getMarkupReply() {
-        BiConsumer<BaseAbilityBot , Update> action = (bot ,upd) ->
+        BiConsumer<BaseAbilityBot, Update> action = (bot, upd) ->
         {
             String call_data = upd.getCallbackQuery().getData();
             var message = (Message) upd.getCallbackQuery().getMessage();
@@ -92,8 +88,7 @@ public class WeatherAbilityBot extends AbilityBot {
             List<String> currentDate = currentDate7.get(chat_id);
             String answer = "";
             boolean loc = false;
-            switch (call_data)
-            {
+            switch (call_data) {
                 case "0" -> answer = currentWeather.getFirst();
                 case "1" -> answer = currentWeather.get(1);
                 case "2" -> answer = currentWeather.get(2);
@@ -101,20 +96,18 @@ public class WeatherAbilityBot extends AbilityBot {
                 case "4" -> answer = currentWeather.get(4);
                 case "5" -> answer = currentWeather.get(5);
                 case "6" -> answer = currentWeather.get(6);
-                default ->
-                {
+                default -> {
                     loc = true;
                     Map<Long, Location> currentL = db.getMap("location");
                     Location location = new Location();
                     location.setLatitude(Double.valueOf(call_data.substring(call_data.indexOf(" ") + 1)));
-                    location.setLongitude(Double.valueOf(call_data.substring(0 ,call_data.indexOf(" "))));
-                    currentL.put(chat_id,location);
-                    silent.send( "Your location is set successfully at this coordinates: " + call_data, upd.getCallbackQuery().getMessage().getChatId());
+                    location.setLongitude(Double.valueOf(call_data.substring(0, call_data.indexOf(" "))));
+                    currentL.put(chat_id, location);
+                    silent.send("Your location is set successfully at this coordinates: " + call_data, upd.getCallbackQuery().getMessage().getChatId());
                 }
 
             }
-            if(!loc)
-            {
+            if (!loc) {
                 EditMessageText new_message = new EditMessageText();
                 new_message.setChatId(Long.toString(chat_id));
                 new_message.setText(answer);
@@ -129,37 +122,35 @@ public class WeatherAbilityBot extends AbilityBot {
         };
 
 
-            return Reply.of(action, Flag.CALLBACK_QUERY);
+        return Reply.of(action, Flag.CALLBACK_QUERY);
     }
 
-    public Ability start()
-    {
-       return Ability.builder()
-               .name("start")
-               .info("Start Weather bot")
-               .locality(USER)
-               .privacy(PUBLIC)
-               .setStatsEnabled(true)
-               .action(ctx ->
-               {
-                   try {
-                       requestGeo(ctx.chatId() , "\uD83C\uDF26\uFE0F Welcome to WeatherBot! \uD83C\uDF08\n" +
-                               "\n" +
-                               "I'm here to provide you with the latest weather updates. I'll fetch the current conditions, forecast, and more. Feel free to explore and stay informed! Type /help for a list of available commands.\n" +
-                               "\n" +
-                               "\uD83C\uDF0D Start by telling me the city or providing your location to get started. Enjoy the weather updates! ☀\uFE0F❄\uFE0F\n");
-                   } catch (TelegramApiException e) {
-                       throw new RuntimeException(e);
-                   }
+    public Ability start() {
+        return Ability.builder()
+                .name("start")
+                .info("Start Weather bot")
+                .locality(USER)
+                .privacy(PUBLIC)
+                .setStatsEnabled(true)
+                .action(ctx ->
+                {
+                    try {
+                        requestGeo(ctx.chatId(), """
+                                \uD83C\uDF26\uFE0F Welcome to WeatherBot! \uD83C\uDF08
+
+                                I'm here to provide you with the latest weather updates. I'll fetch the current conditions, forecast, and more. Feel free to explore and stay informed! Type /help for a list of available commands.
+
+                                \uD83C\uDF0D Start by telling me the city or providing your location to get started. Enjoy the weather updates! ☀\uFE0F❄\uFE0F
+                                """);
+                    } catch (TelegramApiException e) {
+                        throw new RuntimeException(e);
+                    }
 
 
-
-
-               }).build();
+                }).build();
     }
 
-    public Ability currentWeather()
-    {
+    public Ability currentWeather() {
         return Ability.builder().name("current")
                 .info("Send a current weather")
                 .locality(USER)
@@ -169,12 +160,11 @@ public class WeatherAbilityBot extends AbilityBot {
                         {
                             Map<Long, Location> currentL = db.getMap("location");
                             Location loc = currentL.get(ctx.chatId());
-                            weatherClient.getWeather(loc.getLatitude(),loc.getLongitude(),appid, "metric").enqueue(
+                            weatherClient.getWeather(loc.getLatitude(), loc.getLongitude(), appid, "metric").enqueue(
                                     new Callback<>() {
                                         @Override
                                         public void onResponse(Call<WeatherDto> call, Response<WeatherDto> response) {
-                                            if(response.isSuccessful())
-                                            {
+                                            if (response.isSuccessful()) {
                                                 assert response.body() != null;
                                                 silent.send(response.body().toString(), ctx.chatId());
                                             }
@@ -190,8 +180,8 @@ public class WeatherAbilityBot extends AbilityBot {
                         }
                 ).build();
     }
-    public Ability weatherForecast()
-    {
+
+    public Ability weatherForecast() {
         return Ability.builder()
                 .name("detailed_forecast")
                 .info("Forecast for five days with step of three hours")
@@ -207,21 +197,19 @@ public class WeatherAbilityBot extends AbilityBot {
                                     new Callback<WeatherForecastDto>() {
                                         @Override
                                         public void onResponse(Call<WeatherForecastDto> call, Response<WeatherForecastDto> response) {
-                                            if(response.isSuccessful()  && response.body()!=null) {
-
-                                                    int index = 0;
-                                                    List<String> message = response.body().toArrayD();
-                                                    Map<Long, List<String>> currentW7 = db.getMap("weather7");
-                                                    currentW7.put(ctx.chatId(), response.body().toArrayD());
-                                                    Map<Long, List<String>> currentUserDate = db.getMap("Date");
-                                                    currentUserDate.put(ctx.chatId(), response.body().toDataArrayD());
-                                                    SendMessage sendMessage = new SendMessage(Long.toString(ctx.chatId()), message.getFirst());
-                                                    sendMessage.setReplyMarkup(createInlineKeyboard(response.body().toDataArrayD()));
-                                                    try {
-                                                        execute(sendMessage);
-                                                    } catch (TelegramApiException e) {
-                                                        throw new RuntimeException(e);
-                                                    }
+                                            if (response.isSuccessful() && response.body() != null) {
+                                                List<String> message = response.body().toArrayD();
+                                                Map<Long, List<String>> currentW7 = db.getMap("weather7");
+                                                currentW7.put(ctx.chatId(), response.body().toArrayD());
+                                                Map<Long, List<String>> currentUserDate = db.getMap("Date");
+                                                currentUserDate.put(ctx.chatId(), response.body().toDataArrayD());
+                                                SendMessage sendMessage = new SendMessage(Long.toString(ctx.chatId()), message.getFirst());
+                                                sendMessage.setReplyMarkup(createInlineKeyboard(response.body().toDataArrayD()));
+                                                try {
+                                                    execute(sendMessage);
+                                                } catch (TelegramApiException e) {
+                                                    throw new RuntimeException(e);
+                                                }
                                             }
                                         }
 
@@ -236,8 +224,8 @@ public class WeatherAbilityBot extends AbilityBot {
 
                 ).build();
     }
-    public Ability getCityByName()
-    {
+
+    public Ability getCityByName() {
         String Message1 = "Choose your location from the list below:\n(If you don't see your location below, try to reply on the message before with the nearest village or city. Sorry!)";
         String Message = "Send your city name to set your geolocation (slide this message to left on phone or click right button and choose \"Reply\" on PC or laptop and write the name of your location )";
         return Ability.builder()
@@ -250,40 +238,36 @@ public class WeatherAbilityBot extends AbilityBot {
                         {
                             silent.send(Message, ctx.chatId());
                         }
-                        )
+                )
                 .reply((baseAbilityBot, update) ->
-                        {
-                            GeoClient.getGeo(update.getMessage().getText() , false, false, 20 , appid2).enqueue(
+                                GeoClient.getGeo(update.getMessage().getText(), false, false, 20, appid2).enqueue(
 
-                                    new Callback<GeocodeDto>() {
-                                        @Override
-                                        public void onResponse(Call<GeocodeDto> call, Response<GeocodeDto> response) {
+                                        new Callback<>() {
+                                            @Override
+                                            public void onResponse(Call<GeocodeDto> call, Response<GeocodeDto> response) {
 
-                                            if(response.body() == null)
-                                            {
-                                                silent.send("Error, we can't find this city " + update.getMessage().getText(), update.getMessage().getChatId());
-                                            }
-                                            else {
-                                                SendMessage sendMessage = new SendMessage(Long.toString(update.getMessage().getChatId()),Message1);
-                                                sendMessage.setReplyMarkup(createInlineKeyboardLong(response.body().toArray2()));
-                                                try {
-                                                    execute(sendMessage);
-                                                } catch (TelegramApiException e) {
-                                                    throw new RuntimeException(e);
+                                                if (response.body() == null) {
+                                                    silent.send("Error, we can't find this city " + update.getMessage().getText(), update.getMessage().getChatId());
+                                                } else {
+                                                    SendMessage sendMessage = new SendMessage(Long.toString(update.getMessage().getChatId()), Message1);
+                                                    sendMessage.setReplyMarkup(createInlineKeyboardLong(response.body().toArray2()));
+                                                    try {
+                                                        execute(sendMessage);
+                                                    } catch (TelegramApiException e) {
+                                                        throw new RuntimeException(e);
+                                                    }
                                                 }
                                             }
+
+                                            @Override
+                                            public void onFailure(Call<GeocodeDto> call, Throwable throwable) {
+
+                                                System.out.println("Error: " + throwable);
+                                                throwable.printStackTrace();
+
+                                            }
                                         }
-
-                                        @Override
-                                        public void onFailure(Call<GeocodeDto> call, Throwable throwable) {
-
-                                            System.out.println("Error: " + throwable);
-                                            throwable.printStackTrace();
-
-                                        }
-                                    }
-                            );
-                        },
+                                ),
                         Flag.TEXT,
                         Flag.REPLY,
                         isReplyToMessage(Message),
@@ -291,6 +275,7 @@ public class WeatherAbilityBot extends AbilityBot {
                 )
                 .build();
     }
+
     private Predicate<Update> isReplyToMessage(String message) {
         return upd -> {
             Message reply = upd.getMessage().getReplyToMessage();
@@ -301,8 +286,8 @@ public class WeatherAbilityBot extends AbilityBot {
     private Predicate<Update> isReplyToBot() {
         return upd -> upd.getMessage().getReplyToMessage().getFrom().getUserName().equalsIgnoreCase(getBotUsername());
     }
-    public Ability weatherForecast7()
-    {
+
+    public Ability weatherForecast7() {
         return Ability.builder()
                 .name("forecast_for_7_days")
                 .info("Simplified forecast")
@@ -314,14 +299,12 @@ public class WeatherAbilityBot extends AbilityBot {
 
                             Map<Long, Location> currentL = db.getMap("location");
                             Location loc = currentL.get(ctx.chatId());
-                            forecast7Client.getForecast7(loc.getLatitude(), loc.getLongitude(),"daily","EET","metric",appid1 ).enqueue(
+                            forecast7Client.getForecast7(loc.getLatitude(), loc.getLongitude(), "daily", "EET", "metric", appid1).enqueue(
 
-                                    new Callback<WeatherForecast7Dto>() {
+                                    new Callback<>() {
                                         @Override
                                         public void onResponse(Call<WeatherForecast7Dto> call, Response<WeatherForecast7Dto> response) {
-                                            if(response.isSuccessful() && response.body()!=null) {
-
-                                                int index = 0;
+                                            if (response.isSuccessful() && response.body() != null) {
                                                 ArrayList<String> message = response.body().toArray();
                                                 Map<Long, List<String>> currentW7 = db.getMap("weather7");
                                                 currentW7.put(ctx.chatId(), response.body().toArray());
@@ -349,24 +332,23 @@ public class WeatherAbilityBot extends AbilityBot {
 
                 ).build();
     }
+
     public Ability help() {
         return Ability.builder()
                 .name("help")
                 .info("Current commands")
                 .locality(USER)
                 .privacy(PUBLIC)
-                .action(ctx -> {
-                    silent.send("""
-                            Current commands for now:
-                            /start
-                            /current
-                            /detailed_forecast
-                            /forecast_for_7_days
-                            /edit_geolocation
-                            /for_one_day
-                            /set_geo_by_city
-                            /help""", ctx.chatId());
-                }).build();
+                .action(ctx -> silent.send("""
+                        Current commands for now:
+                        /start
+                        /current
+                        /detailed_forecast
+                        /forecast_for_7_days
+                        /edit_geolocation
+                        /for_one_day
+                        /set_geo_by_city
+                        /help""", ctx.chatId())).build();
     }
 
     public Ability editGeolocation() {
@@ -393,11 +375,11 @@ public class WeatherAbilityBot extends AbilityBot {
                 .action(ctx -> {
                     Map<Long, Location> currentL = db.getMap("location");
                     Location loc = currentL.get(ctx.chatId());
-                    forecast7Client.getForecast7(loc.getLatitude(), loc.getLongitude(), "hourly","EET", "metric",appid1).enqueue(
-                            new Callback<WeatherForecast7Dto>() {
+                    forecast7Client.getForecast7(loc.getLatitude(), loc.getLongitude(), "hourly", "EET", "metric", appid1).enqueue(
+                            new Callback<>() {
                                 @Override
                                 public void onResponse(Call<WeatherForecast7Dto> call, Response<WeatherForecast7Dto> response) {
-                                    if(response.isSuccessful() && response.body()!=null) {
+                                    if (response.isSuccessful() && response.body() != null) {
                                         silent.send(response.body().toString(), ctx.chatId());
                                     }
                                 }
@@ -438,16 +420,13 @@ public class WeatherAbilityBot extends AbilityBot {
         List<InlineKeyboardButton> keyboardButtons1 = new ArrayList<>();
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
-        for(String element : message)
-        {
+        for (String element : message) {
             InlineKeyboardButton keyboardButton = new InlineKeyboardButton();
             keyboardButton.setText(message.get(message.indexOf(element)));
             keyboardButton.setCallbackData(Integer.toString((message.indexOf(element))));
-            if(message.indexOf(element) < 3)
-            {
+            if (message.indexOf(element) < 3) {
                 keyboardButtons.add(keyboardButton);
-            }
-            else{
+            } else {
                 keyboardButtons1.add(keyboardButton);
             }
         }
@@ -461,8 +440,7 @@ public class WeatherAbilityBot extends AbilityBot {
     private InlineKeyboardMarkup createInlineKeyboardLong(ArrayList<ArrayList<String>> message) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
-        for(ArrayList<String> element : message)
-        {
+        for (ArrayList<String> element : message) {
             List<InlineKeyboardButton> keyboardButtons = new ArrayList<>();
             InlineKeyboardButton keyboardButton = new InlineKeyboardButton();
             keyboardButton.setText(element.getFirst());
