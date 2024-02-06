@@ -22,7 +22,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import redis.clients.jedis.JedisPool;
+
 import redis.clients.jedis.JedisPooled;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -40,7 +40,9 @@ import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 import static org.telegram.abilitybots.api.util.AbilityUtils.getChatId;
 
 public class WeatherAbilityBot extends AbilityBot {
-    private JedisPooled jedis = new JedisPooled("redis-10008.c304.europe-west1-2.gce.cloud.redislabs.com", 10008);
+
+
+    private final JedisPooled jedis = new JedisPooled(Configuration.getConfig("DB_NAME"), Integer.parseInt(Configuration.getConfig("DB_PORT")) , "default", Configuration.getConfig("DB_PASS"));
 
 
 
