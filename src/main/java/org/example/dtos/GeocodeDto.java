@@ -7,6 +7,8 @@ public class GeocodeDto {
 
     private ArrayList<Feature> features;
 
+
+
     public ArrayList<ArrayList<String>> toArray2()
     {
         return (ArrayList<ArrayList<String>>) features.stream().map(s ->

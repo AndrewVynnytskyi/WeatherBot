@@ -96,10 +96,6 @@ public class WeatherForecastDto {
                                                             deg < 293 ? "West" :
                                                                     "Northwest";
         }
-        private String getPartOfDay(String part)
-        {
-            return((Objects.equals(part, "d"))?"day":"night");
-        }
 
         public ArrayList<String> toDataArrayD()
         {

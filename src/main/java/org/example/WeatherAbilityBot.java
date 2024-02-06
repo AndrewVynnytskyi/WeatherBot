@@ -22,11 +22,14 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -37,6 +40,9 @@ import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 import static org.telegram.abilitybots.api.util.AbilityUtils.getChatId;
 
 public class WeatherAbilityBot extends AbilityBot {
+    private JedisPooled jedis = new JedisPooled("redis-10008.c304.europe-west1-2.gce.cloud.redislabs.com", 10008);
+
+
 
     private final String appid = Configuration.getConfig("BOT_API1");
 
@@ -50,7 +56,10 @@ public class WeatherAbilityBot extends AbilityBot {
     private final GeoQuerries GeoClient = Client.getCityCoord();
     private static Location location = new Location();
 
-
+    private Location setLocation(String data)
+    {
+        return new Location(Double.valueOf(data.substring(0, data.indexOf(" "))),Double.valueOf(data.substring(data.indexOf(" ") + 1)), null,null,null,null);
+    }
     protected WeatherAbilityBot() {
         super(Configuration.getConfig("BOT_KEY"), Configuration.getConfig("BOT_NAME"));
     }
@@ -68,8 +77,11 @@ public class WeatherAbilityBot extends AbilityBot {
             location.setLongitude(upd.getMessage().getLocation().getLongitude());
 
             if (location != null) {
-                Map<Long, Location> Geoposition = db.getMap("location");
-                Geoposition.put(upd.getMessage().getChatId(), location);
+
+
+                Map<String, String> Geolocation = new HashMap<>();
+                Geolocation.put(Long.toString(upd.getMessage().getChatId()), location.getLongitude() + " " + location.getLatitude());
+                jedis.hset("location", Geolocation);
                 silent.send("Your location set successfully", getChatId(upd));
             }
         };
@@ -98,11 +110,11 @@ public class WeatherAbilityBot extends AbilityBot {
                 case "6" -> answer = currentWeather.get(6);
                 default -> {
                     loc = true;
-                    Map<Long, Location> currentL = db.getMap("location");
+
                     Location location = new Location();
                     location.setLatitude(Double.valueOf(call_data.substring(call_data.indexOf(" ") + 1)));
                     location.setLongitude(Double.valueOf(call_data.substring(0, call_data.indexOf(" "))));
-                    currentL.put(chat_id, location);
+                    jedis.hset("location", Long.toString(chat_id), location.getLongitude() + " " + location.getLatitude());
                     silent.send("Your location is set successfully at this coordinates: " + call_data, upd.getCallbackQuery().getMessage().getChatId());
                 }
 
@@ -158,8 +170,7 @@ public class WeatherAbilityBot extends AbilityBot {
                 .setStatsEnabled(true)
                 .action(ctx ->
                         {
-                            Map<Long, Location> currentL = db.getMap("location");
-                            Location loc = currentL.get(ctx.chatId());
+                            Location loc = setLocation(jedis.hget("location", Long.toString(ctx.chatId())));
                             weatherClient.getWeather(loc.getLatitude(), loc.getLongitude(), appid, "metric").enqueue(
                                     new Callback<>() {
                                         @Override
@@ -190,8 +201,7 @@ public class WeatherAbilityBot extends AbilityBot {
                 .enableStats()
                 .action(ctx ->
                         {
-                            Map<Long, Location> currentL = db.getMap("location");
-                            Location loc = currentL.get(ctx.chatId());
+                            Location loc = setLocation(jedis.hget("location", Long.toString(ctx.chatId())));
                             forecastClient.getForecst(loc.getLatitude(), loc.getLongitude(), appid, "metric").enqueue(
 
                                     new Callback<WeatherForecastDto>() {
@@ -297,8 +307,7 @@ public class WeatherAbilityBot extends AbilityBot {
                 .action(ctx ->
                         {
 
-                            Map<Long, Location> currentL = db.getMap("location");
-                            Location loc = currentL.get(ctx.chatId());
+                            Location loc = setLocation(jedis.hget("location", Long.toString(ctx.chatId())));
                             forecast7Client.getForecast7(loc.getLatitude(), loc.getLongitude(), "daily", "EET", "metric", appid1).enqueue(
 
                                     new Callback<>() {
@@ -373,8 +382,7 @@ public class WeatherAbilityBot extends AbilityBot {
                 .locality(USER)
                 .privacy(PUBLIC)
                 .action(ctx -> {
-                    Map<Long, Location> currentL = db.getMap("location");
-                    Location loc = currentL.get(ctx.chatId());
+                    Location loc = setLocation(jedis.hget("location", Long.toString(ctx.chatId())));
                     forecast7Client.getForecast7(loc.getLatitude(), loc.getLongitude(), "hourly", "EET", "metric", appid1).enqueue(
                             new Callback<>() {
                                 @Override
@@ -397,7 +405,6 @@ public class WeatherAbilityBot extends AbilityBot {
 
     void requestGeo(long chatId, String message) throws TelegramApiException {
         KeyboardButton keyboardButton = new KeyboardButton();
-
         keyboardButton.setText("Get access to your geolocation");
         keyboardButton.setRequestLocation(true);
         KeyboardRow keyboardRow = new KeyboardRow();
@@ -418,6 +425,7 @@ public class WeatherAbilityBot extends AbilityBot {
 
         List<InlineKeyboardButton> keyboardButtons = new ArrayList<>();
         List<InlineKeyboardButton> keyboardButtons1 = new ArrayList<>();
+
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
         for (String element : message) {

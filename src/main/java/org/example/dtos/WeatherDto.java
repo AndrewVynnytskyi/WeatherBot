@@ -2,29 +2,25 @@ package org.example.dtos;
 
 import java.util.ArrayList;
 
-public class WeatherDto {
-    private Coord coord;
-    private ArrayList<Weather> weather;
-    private Main main;
-    private int visibility;
-    private Wind wind;
-    private Sys sys;
-
-    String name;
+public record WeatherDto(
+         ArrayList<Weather> weather,
+         Main main,
+         int visibility,
+         Wind wind,
+         Sys sys,
+         String name
+) {
     private String getDirection()
     {
-        return (wind.deg >= 337 || wind.deg < 23) ? "North" :
-                (wind.deg >= 23 && wind.deg < 68) ? "Northeast" :
-                        (wind.deg >= 68 && wind.deg < 113) ? "East" :
-                                (wind.deg >= 113 && wind.deg < 158) ? "Southeast" :
-                                        (wind.deg >= 158 && wind.deg < 203) ? "South" :
-                                                (wind.deg >= 203 && wind.deg < 248) ? "Southwest" :
-                                                        (wind.deg >= 248 && wind.deg < 293) ? "West" :
+        return wind.deg >= 337 || wind.deg < 23 ? "North" :
+                wind.deg < 68 ? "Northeast" :
+                        wind.deg < 113 ? "East" :
+                                wind.deg < 158 ? "Southeast" :
+                                        wind.deg < 203 ? "South" :
+                                                wind.deg < 248 ? "Southwest" :
+                                                        wind.deg < 293 ? "West" :
                                                                 "Northwest";
     }
-
-
-
     @Override
     public String toString()
     {
@@ -42,22 +38,13 @@ public class WeatherDto {
                 "\nThe nearest city or village: " + name);
     }
 
-
 }
 
-
-
-class Coord
-{
-    double lon;
-    double lat;
-
-}
 class Weather
 {
     String main;
     String description;
-    String icon;
+
 }
 
 class Main
@@ -72,7 +59,7 @@ class Main
 class Wind
 {
     double speed;
-    double gust;
+
     int deg;
 }
 class Sys
