@@ -1,6 +1,6 @@
 package org.example.configuration;
 
-import java.io.IOException;
+
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -11,7 +11,7 @@ public class Configuration {
         InputStream inputStream = Configuration.class.getClassLoader().getResourceAsStream("bot.properties");
         try {
             properties.load(inputStream);
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("File bot.properties is not found");
         }
     }
