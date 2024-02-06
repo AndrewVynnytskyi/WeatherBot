@@ -6,6 +6,7 @@ import org.example.dtos.WeatherDto;
 import org.example.dtos.WeatherForecast7Dto;
 import org.example.dtos.WeatherForecastDto;
 import org.example.network.*;
+import org.jetbrains.annotations.NotNull;
 import org.telegram.abilitybots.api.bot.AbilityBot;
 import org.telegram.abilitybots.api.bot.BaseAbilityBot;
 import org.telegram.abilitybots.api.objects.Ability;
@@ -34,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.telegram.abilitybots.api.objects.Locality.USER;
 import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
@@ -71,6 +74,11 @@ public class WeatherAbilityBot extends AbilityBot {
         return Long.parseLong(Configuration.getConfig("CREATOR_ID"));
     }
 
+    private static List<String> split(String str){
+        return Stream.of(str.split("@"))
+                .map (String::new)
+                .toList();
+    }
 
     public Reply GetGeo() {
         BiConsumer<BaseAbilityBot, Update> action = (bot, upd) ->
@@ -96,10 +104,8 @@ public class WeatherAbilityBot extends AbilityBot {
             String call_data = upd.getCallbackQuery().getData();
             var message = (Message) upd.getCallbackQuery().getMessage();
             long chat_id = upd.getCallbackQuery().getMessage().getChatId();
-            Map<Long, List<String>> currentW7 = db.getMap("weather7");
-            List<String> currentWeather = currentW7.get(chat_id);
-            Map<Long, List<String>> currentDate7 = db.getMap("Date");
-            List<String> currentDate = currentDate7.get(chat_id);
+            List<String> currentWeather = split(jedis.hget("weather7", Long.toString(chat_id)));
+            List<String> currentDate = split(jedis.hget("Date", Long.toString(chat_id)));
             String answer = "";
             boolean loc = false;
             switch (call_data) {
@@ -208,13 +214,11 @@ public class WeatherAbilityBot extends AbilityBot {
 
                                     new Callback<WeatherForecastDto>() {
                                         @Override
-                                        public void onResponse(Call<WeatherForecastDto> call, Response<WeatherForecastDto> response) {
+                                        public void onResponse(@NotNull Call<WeatherForecastDto> call, @NotNull Response<WeatherForecastDto> response) {
                                             if (response.isSuccessful() && response.body() != null) {
                                                 List<String> message = response.body().toArrayD();
-                                                Map<Long, List<String>> currentW7 = db.getMap("weather7");
-                                                currentW7.put(ctx.chatId(), response.body().toArrayD());
-                                                Map<Long, List<String>> currentUserDate = db.getMap("Date");
-                                                currentUserDate.put(ctx.chatId(), response.body().toDataArrayD());
+                                                jedis.hset("weather7", Long.toString(ctx.chatId()), String.join("@", response.body().toArrayD()));
+                                                jedis.hset("Date" ,Long.toString(ctx.chatId()), String.join("@", response.body().toDataArrayD()));
                                                 SendMessage sendMessage = new SendMessage(Long.toString(ctx.chatId()), message.getFirst());
                                                 sendMessage.setReplyMarkup(createInlineKeyboard(response.body().toDataArrayD()));
                                                 try {
@@ -317,10 +321,8 @@ public class WeatherAbilityBot extends AbilityBot {
                                         public void onResponse(Call<WeatherForecast7Dto> call, Response<WeatherForecast7Dto> response) {
                                             if (response.isSuccessful() && response.body() != null) {
                                                 ArrayList<String> message = response.body().toArray();
-                                                Map<Long, List<String>> currentW7 = db.getMap("weather7");
-                                                currentW7.put(ctx.chatId(), response.body().toArray());
-                                                Map<Long, List<String>> currentUserDate = db.getMap("Date");
-                                                currentUserDate.put(ctx.chatId(), response.body().toDataArray());
+                                                jedis.hset("weather7", Long.toString(ctx.chatId()), String.join("@", response.body().toArray()));
+                                                jedis.hset("Date" ,Long.toString(ctx.chatId()), String.join("@", response.body().toDataArray()));
                                                 SendMessage sendMessage = new SendMessage(Long.toString(ctx.chatId()), message.getFirst());
                                                 sendMessage.setReplyMarkup(createInlineKeyboard(response.body().toDataArray()));
                                                 try {
