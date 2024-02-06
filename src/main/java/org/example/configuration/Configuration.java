@@ -12,7 +12,7 @@ public class Configuration {
         try {
             properties.load(inputStream);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println("File bot.properties is not found");
         }
     }
 
